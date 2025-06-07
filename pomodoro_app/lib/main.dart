@@ -1,239 +1,260 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:ui';
+import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const PomodoroApp());
+  runApp(const MyApp());
 }
 
-class PomodoroApp extends StatelessWidget {
-  const PomodoroApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      title: 'Pomodoro App',
+      theme: ThemeData.dark(),
+      home: const PomodoroScreen(),
       debugShowCheckedModeBanner: false,
-      home: PomodoroScreen(),
     );
   }
-}
-
-class NavItemData {
-  final IconData icon;
-  final String label;
-
-  NavItemData({required this.icon, required this.label});
 }
 
 class PomodoroScreen extends StatefulWidget {
   const PomodoroScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
-  _PomodoroScreenState createState() => _PomodoroScreenState();
+  State<PomodoroScreen> createState() => _PomodoroScreenState();
 }
 
-class _PomodoroScreenState extends State<PomodoroScreen> {
-  int _selectedIndex = 0;
-  static const int initialTime = 25 * 60;
-  int _remainingTime = initialTime;
-  bool _isRunning = false;
+class _PomodoroScreenState extends State<PomodoroScreen> with TickerProviderStateMixin {
+  final List<String> timerTypes = ["Focus", "Short Break", "Long Break"];
+  final Map<String, int> timerDurations = {
+    "Focus": 1500,
+    "Short Break": 300,
+    "Long Break": 900,
+  };
+
+  late String selectedTimerType;
+  late int remainingSeconds;
   Timer? _timer;
+  bool isRunning = false;
 
-  final List<NavItemData> navItems = [
-    NavItemData(icon: Icons.bolt, label: "Focus"),
-    NavItemData(icon: Icons.directions_run, label: "Move"),
-    NavItemData(icon: Icons.school, label: "Learn"),
-    NavItemData(icon: Icons.person, label: "Profile"),
-  ];
+  late TabController _tabController;
 
-  void _onNavItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
+  @override
+  void initState() {
+    super.initState();
+    selectedTimerType = "Focus";
+    remainingSeconds = timerDurations[selectedTimerType]!;
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      setState(() {
+        selectedTimerType = timerTypes[_tabController.index];
+        remainingSeconds = timerDurations[selectedTimerType]!;
+        _timer?.cancel();
+        isRunning = false;
+      });
     });
   }
 
-  void _toggleTimer() {
-    if (_isRunning) {
-      _pauseTimer();
+  void toggleTimer() {
+    if (isRunning) {
+      _timer?.cancel();
     } else {
-      _startTimer();
-    }
-  }
-
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingTime > 0) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         setState(() {
-          _remainingTime--;
+          if (remainingSeconds > 0) {
+            remainingSeconds--;
+          } else {
+            _timer?.cancel();
+            isRunning = false;
+          }
         });
-      } else {
-        _pauseTimer();
-      }
-    });
-
+      });
+    }
     setState(() {
-      _isRunning = true;
+      isRunning = !isRunning;
     });
   }
 
-  void _pauseTimer() {
-    _timer?.cancel();
-    setState(() {
-      _isRunning = false;
-    });
-  }
-
-  String _formatTime(int seconds) {
+  String formatTime(int seconds) {
     final minutes = seconds ~/ 60;
     final secs = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    return "$minutes:${secs.toString().padLeft(2, '0')}";
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset('assets/image.png', fit: BoxFit.cover),
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-            child: Container(color: Colors.black.withOpacity(0.1)),
+    return Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/image.png'),
+              fit: BoxFit.cover,
+            ),
           ),
-          Column(
-            children: [
-              const SizedBox(height: 60),
-              const Text(
-                "POMODORO",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  letterSpacing: 1.5,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "short break",
-                    style: TextStyle(color: Color.fromARGB(255, 242, 238, 238)),
-                  ),
-                  SizedBox(width: 20),
-                  Text(
-                    "Focus",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(width: 20),
-                  Text(
-                    "long break",
-                    style: TextStyle(color: Color.fromARGB(255, 242, 238, 238)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 40),
-              Container(
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color.fromARGB(255, 0, 7, 4), width: 4),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _formatTime(_remainingTime),
-                        style: const TextStyle(
-                          fontSize: 36,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Text(
-                        "Minutes",
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+            child: Container(
+              color: Colors.black.withOpacity(0.2),
+            ),
+          ),
+        ),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: const Text("Pomodoro"),
+            actions: [
               IconButton(
-                onPressed: _toggleTimer,
-                icon: Icon(_isRunning ? Icons.pause_circle_filled : Icons.play_circle_fill),
-                color: const Color.fromARGB(255, 140, 143, 141),
-                iconSize: 64,
-              ),
-              Text(
-                _isRunning ? "Pause" : "Start",
-                style: const TextStyle(color: Colors.white),
-              ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(navItems.length, (index) {
-                    final item = navItems[index];
-                    final isSelected = index == _selectedIndex;
-                    return GestureDetector(
-                      onTap: () => _onNavItemTapped(index),
-                      child: NavItemWidget(
-                        icon: item.icon,
-                        label: item.label,
-                        selected: isSelected,
-                      ),
-                    );
-                  }),
-                ),
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => const HamburgerModal(),
+                  );
+                },
               ),
             ],
-          )
-        ],
+            bottom: TabBar(
+              controller: _tabController,
+              tabs: timerTypes.map((type) => Tab(text: type)).toList(),
+              indicatorColor: Colors.greenAccent,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.grey,
+            ),
+          ),
+          body: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                selectedTimerType,
+                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white70, width: 6),
+                ),
+                child: Text(
+                  formatTime(remainingSeconds),
+                  style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 30),
+              IconButton(
+                icon: Icon(isRunning ? Icons.pause_circle : Icons.play_circle, size: 64),
+                onPressed: toggleTimer,
+              ),
+              const SizedBox(height: 40),
+              const SongCard(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class SongCard extends StatelessWidget {
+  const SongCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 40),
+      child: ListTile(
+        leading: const Icon(Icons.music_note),
+        title: const Text("Lofi Chill Beats"),
+        trailing: IconButton(
+          icon: const Icon(Icons.play_arrow),
+          onPressed: () {
+            // Add play logic here
+          },
+        ),
       ),
     );
   }
 }
 
-class NavItemWidget extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-
-  const NavItemWidget({
-    super.key,
-    required this.icon,
-    required this.label,
-    this.selected = false,
-  });
+class HamburgerModal extends StatelessWidget {
+  const HamburgerModal({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? const Color.fromARGB(255, 255, 254, 254) : Colors.grey;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: color),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(color: color, fontSize: 12),
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      builder: (_, controller) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
         ),
-      ],
+        child: DefaultTabController(
+          length: 3,
+          child: Column(
+            children: const [
+              TabBar(
+                labelColor: Colors.white,
+                indicatorColor: Colors.greenAccent,
+                tabs: [
+                  Tab(icon: Icon(Icons.all_inclusive), text: 'Infinite Play'),
+                  Tab(icon: Icon(Icons.timer), text: 'Set Timer'),
+                  Tab(icon: Icon(Icons.loop), text: 'Set Interval'),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    InfinitePlayTab(),
+                    SetTimerTab(),
+                    SetIntervalTab(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
+  }
+}
+
+class InfinitePlayTab extends StatelessWidget {
+  const InfinitePlayTab({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const Center(child: Text("Infinite Play Settings", style: TextStyle(color: Colors.white)));
+  }
+}
+
+class SetTimerTab extends StatelessWidget {
+  const SetTimerTab({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const Center(child: Text("Set Timer Settings", style: TextStyle(color: Colors.white)));
+  }
+}
+
+class SetIntervalTab extends StatelessWidget {
+  const SetIntervalTab({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const Center(child: Text("Set Interval Settings", style: TextStyle(color: Colors.white)));
   }
 }
