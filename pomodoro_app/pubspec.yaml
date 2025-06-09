@@ -64,6 +64,8 @@ flutter:
    
   assets:
     - assets/image.png
+    - assets/image copy.png
+    - assets/image copy 2.png
 
 
 

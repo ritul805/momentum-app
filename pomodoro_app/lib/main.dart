@@ -12,13 +12,53 @@ class PomodoroApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Pomodoro',
       debugShowCheckedModeBanner: false,
+      title: 'Pomodoro App',
       theme: ThemeData.dark(),
-      home: const PomodoroScreen(),
+      home: const MainScreen(),
     );
   }
 }
+
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  int _currentIndex = 0;
+
+  final List<Widget> _screens = [
+    const PomodoroScreen(),
+    const GenderSelectionScreen(),
+    const PlaceholderScreen(title: 'Learn'),
+    const PlaceholderScreen(title: 'Profile'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _screens[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.black,
+        onTap: (index) => setState(() => _currentIndex = index),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.timer), label: 'Focus'),
+          BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Move'),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Learn'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------- POMODORO SCREEN ----------------
 
 class PomodoroScreen extends StatefulWidget {
   const PomodoroScreen({super.key});
@@ -27,8 +67,7 @@ class PomodoroScreen extends StatefulWidget {
   State<PomodoroScreen> createState() => _PomodoroScreenState();
 }
 
-class _PomodoroScreenState extends State<PomodoroScreen>
-    with TickerProviderStateMixin {
+class _PomodoroScreenState extends State<PomodoroScreen> with TickerProviderStateMixin {
   final List<String> timerTypes = ['Focus', 'Short Break', 'Long Break'];
   final Map<String, int> timerDurations = {
     'Focus': 1500,
@@ -40,7 +79,6 @@ class _PomodoroScreenState extends State<PomodoroScreen>
   late int remainingSeconds;
   Timer? _timer;
   bool isRunning = false;
-
   late TabController _tabController;
 
   @override
@@ -94,7 +132,6 @@ class _PomodoroScreenState extends State<PomodoroScreen>
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Translucent background
         Container(
           decoration: const BoxDecoration(
             image: DecorationImage(
@@ -104,36 +141,30 @@ class _PomodoroScreenState extends State<PomodoroScreen>
           ),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-            child: Container(
-              color: Colors.black.withOpacity(0.1),
-            ),
+            child: Container(color: Colors.black.withOpacity(0.2)),
           ),
         ),
         Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
-            title: const Text('Pomodoro'),
             backgroundColor: Colors.transparent,
             elevation: 0,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) => const TimerSettingsModal(),
-                  );
-                },
-              )
-            ],
+            leading: IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white70),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => const TimerSettingsModal(),
+                );
+              },
+            ),
+            title: const Text('Pomodoro'),
             bottom: TabBar(
               controller: _tabController,
               tabs: timerTypes.map((e) => Tab(text: e)).toList(),
               indicatorColor: Colors.greenAccent,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.grey,
             ),
           ),
           body: Column(
@@ -141,35 +172,27 @@ class _PomodoroScreenState extends State<PomodoroScreen>
             children: [
               Text(
                 selectedType,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.white70,
-                ),
+                style: const TextStyle(fontSize: 16, color: Colors.white70),
               ),
               const SizedBox(height: 20),
               Container(
-                width: 250,
-                height: 250,
+                width: 260,
+                height: 260,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.black, width: 8),
+                  border: Border.all(color: Colors.black, width: 6),
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   formatTime(remainingSeconds),
-                  style: const TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 20),
               IconButton(
                 icon: Icon(
                   isRunning ? Icons.pause_circle : Icons.play_circle,
-                  size: 48,
+                  size: 40,
                   color: Colors.white,
                 ),
                 onPressed: toggleTimer,
@@ -186,7 +209,6 @@ class _PomodoroScreenState extends State<PomodoroScreen>
 
 class SongCard extends StatelessWidget {
   const SongCard({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -203,16 +225,14 @@ class SongCard extends StatelessWidget {
   }
 }
 
-// TIMER SETTINGS MODAL
 class TimerSettingsModal extends StatelessWidget {
   const TimerSettingsModal({super.key});
 
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-      initialChildSize: 0.85,
+      initialChildSize: 0.9,
       builder: (_, controller) => Container(
-        padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
           color: Colors.black87,
           borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
@@ -220,8 +240,8 @@ class TimerSettingsModal extends StatelessWidget {
         child: DefaultTabController(
           length: 3,
           child: Column(
-            children: const [
-              TabBar(
+            children: [
+              const TabBar(
                 labelColor: Colors.white,
                 indicatorColor: Colors.greenAccent,
                 tabs: [
@@ -233,9 +253,78 @@ class TimerSettingsModal extends StatelessWidget {
               Expanded(
                 child: TabBarView(
                   children: [
-                    InfinitePlayTab(),
-                    SetTimerTab(),
-                    SetIntervalTab(),
+                    // Infinite Play
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Activate Quotes", style: TextStyle(color: Colors.white70)),
+                        Switch(value: true, onChanged: (_) {}),
+                        const SizedBox(height: 10),
+                        const Text("Quote refresh cycle: 25:00", style: TextStyle(color: Colors.white)),
+                        const SizedBox(height: 30),
+                        ElevatedButton(onPressed: () {}, child: const Text("APPLY"))
+                      ],
+                    ),
+                    // Set Timer
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Choose your timer", style: TextStyle(color: Colors.white)),
+                        const SizedBox(height: 20),
+                        Wrap(
+                          spacing: 12,
+                          children: [
+                            ElevatedButton(onPressed: () {}, child: const Text("5 min")),
+                            ElevatedButton(onPressed: () {}, child: const Text("10 min")),
+                            ElevatedButton(onPressed: () {}, child: const Text("15 min")),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 50),
+                          child: TextField(
+                            decoration: const InputDecoration(
+                              hintText: "Custom (mins)",
+                              filled: true,
+                              fillColor: Colors.white10,
+                              hintStyle: TextStyle(color: Colors.white54),
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        ElevatedButton(onPressed: () {}, child: const Text("APPLY"))
+                      ],
+                    ),
+                    // Set Interval
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Work Time", style: TextStyle(color: Colors.white)),
+                        Wrap(
+                          spacing: 12,
+                          children: [
+                            ElevatedButton(onPressed: () {}, child: const Text("20 min")),
+                            ElevatedButton(onPressed: () {}, child: const Text("25 min")),
+                            ElevatedButton(onPressed: () {}, child: const Text("30 min")),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        const Text("Rest Time", style: TextStyle(color: Colors.white)),
+                        Wrap(
+                          spacing: 12,
+                          children: [
+                            ElevatedButton(onPressed: () {}, child: const Text("5 min")),
+                            ElevatedButton(onPressed: () {}, child: const Text("10 min")),
+                            ElevatedButton(onPressed: () {}, child: const Text("15 min")),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+                        ElevatedButton(onPressed: () {}, child: const Text("APPLY"))
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -247,82 +336,81 @@ class TimerSettingsModal extends StatelessWidget {
   }
 }
 
-// Timer Setting Tabs
-class InfinitePlayTab extends StatelessWidget {
-  const InfinitePlayTab({super.key});
+class GenderSelectionScreen extends StatelessWidget {
+  const GenderSelectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SwitchListTile(
-          value: true,
-          onChanged: (_) {},
-          title: const Text("Show Quotes", style: TextStyle(color: Colors.white)),
-        ),
-        const SizedBox(height: 20),
-        const Text("Default time: 25 min", style: TextStyle(color: Colors.white70)),
-      ],
-    );
-  }
-}
-
-class SetTimerTab extends StatelessWidget {
-  const SetTimerTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Wrap(
-          spacing: 10,
-          children: [5, 10, 15].map((min) {
-            return ElevatedButton(
-              onPressed: () {},
-              child: Text("$min min"),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 20),
-        const TextField(
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: "Custom Time (minutes)",
-            labelStyle: TextStyle(color: Colors.white),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.white70),
-            ),
-            border: OutlineInputBorder(),
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/background.jpg'),
+            fit: BoxFit.cover,
           ),
-          style: TextStyle(color: Colors.white),
         ),
-      ],
+        child: Column(
+          children: [
+            const SizedBox(height: 80),
+            const Text(
+              "What's your gender?",
+              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+              child: Text(
+                "This will help us tailor your workout to match your metabolic rate perfectly",
+                style: TextStyle(color: Colors.white70),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Column(
+                  children: [
+                    Image.asset('assets/image copy.png', height: 180),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Male selected")),
+                        );
+                      },
+                      child: const Text('Male'),
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Image.asset('assets/image copy 2.png', height: 180),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Female selected")),
+                        );
+                      },
+                      child: const Text('Female'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
-class SetIntervalTab extends StatelessWidget {
-  const SetIntervalTab({super.key});
+class PlaceholderScreen extends StatelessWidget {
+  final String title;
+  const PlaceholderScreen({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Text("Work/Rest Time", style: TextStyle(color: Colors.white)),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [20, 25, 30].map((min) {
-            return ElevatedButton(onPressed: () {}, child: Text("$min / 5"));
-          }).toList(),
-        ),
-        const Spacer(),
-        ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12)),
-          child: const Text("Apply"),
-        ),
-      ],
-    );
+    return Center(child: Text('$title Screen', style: const TextStyle(fontSize: 24)));
   }
 }
